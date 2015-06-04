@@ -8,7 +8,6 @@ requirejs.config({
     //never includes a ".js" extension since
     //the paths config could be for a directory.
     paths: {
-        
         'jquery': 'libs/jquery',
         'underscore':'libs/underscore',
         'Handlebars':'libs/handlebars',
