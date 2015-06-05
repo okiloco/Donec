@@ -22,8 +22,8 @@ requirejs.config({
           deps:["jquery"],
           exports: '_'
         },
-        backbone: {
-          deps:["jquery"],
+        Backbone: {
+          deps:['jquery','underscore', 'Handlebars'],
           exports: 'Backbone'
         },
         Handlebars:{
@@ -31,7 +31,7 @@ requirejs.config({
             exports:'Handlebars'
         },
         Donec: {
-            deps: ['underscore', 'jquery','Handlebars','Backbone'],
+            deps: ['jquery','underscore', 'Handlebars','Backbone'],
             exports: 'Donec'
         },
     },
@@ -41,16 +41,15 @@ requirejs.config({
     wrapShim: true
 });
 
-require(
-    [
-    /*'jquery',
+require([
+    'jquery',
     'underscore',
+    'Handlebars',
     'Backbone',
-    'Handlebars',*/
-    'backbone',
-    'Handlebars'
-    ],
-    function($,Backbone,Handlebars){
-        
-    }
-);
+    'Donec'
+],function($, _, Handlebars,Backbone) {
+   
+        Donec.initialize($,_,Handlebars,Backbone);
+        // console.log(Handlebars);
+    
+});

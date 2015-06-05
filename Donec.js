@@ -1,7 +1,9 @@
 /*
   Ejemplo de Donec
 */
-var debug = false;
+var debug = false,
+Handlebars,
+Backbone;
 /*Objeto sandbox o Delegate, Es el encargado de delegar eventos y funciones a cada uno de los módulos enlazados*/
 var Sandbox = function() {
   var listeners = {}, dispatchs={};
@@ -220,7 +222,7 @@ var Sandbox = function() {
                 return salida;
               }catch(ex) {
                 if(typeof instance["onerror"] == 'function') instance["onerror"].apply(this, [ex]);
-                  console.warn("[Error] " +moduleID +" - "+name + "(): " + ex.message);
+                  console.error("[Error] " +moduleID +" - "+name + "(): " + ex.message);
                 }
               }
             }(name, method);
@@ -346,22 +348,27 @@ var Sandbox = function() {
   }
   /*Agregar Eventos Personalizados*/
   
-  function initialize(){
-    try{
-     
-        ready=true;
-        console.info("Donec started.");
-        _.extend(Donec,Backbone.Events);//Agregar Eventos de underscore
-        Donec.on('onReady',function(){
-          console.log("Ready!");
-          Donec.off('onReady');
-        });
-        Donec.trigger('onReady',$(this));
-        sandbox.dispatchEvent("onReady",$(this));//Disparar evento onReady
-      
-    }catch(e){
-      console.error("[No se encontró Librería Jquery].","Donec necesita cargar previamente JQuery para funcionar correctamente.")
-    }
+  function initialize($, _, handlebars,backbone){
+    Handlebars=handlebars;
+    Backbone=backbone;
+    _.extend(this,Backbone.Events);//Agregar Eventos de underscore
+    
+      try{
+          
+          console.log(Handlebars);
+          ready=true;
+          console.info("Donec started.");
+          /*Donec.on('onReady',function(){
+            console.log("Ready!");
+            Donec.off('onReady');
+          });*/
+          Donec.trigger('onReady',$(this));
+          sandbox.dispatchEvent("onReady",$(this));//Disparar evento onReady
+        
+      }catch(e){
+        console.error("[No se encontró Librería Jquery].","Donec necesita cargar previamente JQuery para funcionar correctamente.")
+      }
+    
     
   };//end function
 
@@ -406,7 +413,11 @@ var Sandbox = function() {
       
       var instance={
         initialize : function(){
-          this.template = Handlebars.compile( $("#home-template").html() );
+          try{
+            this.template = Handlebars.compile( $("#home-template").html() );
+          }catch(e){
+            console.error(e.message);
+          }
         },
         render : function(){
           this.$el.html(this.template());
