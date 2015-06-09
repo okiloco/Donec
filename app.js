@@ -1,4 +1,4 @@
-requirejs.config({
+require.config({
     // enforceDefine: true,
   //By default load any module IDs from js/lib
     baseUrl: 'app',
@@ -48,8 +48,9 @@ require([
     'Backbone',
     'Donec'
 ],function($, _, Handlebars,Backbone) {
-   
-        Donec.initialize($,_,Handlebars,Backbone);
-        // console.log(Handlebars);
-    
+   try{
+    Donec.initialize($,_,Handlebars,Backbone);    
+   }catch(e){
+     console.error('Error [require file no load]',e.message);
+   }
 });

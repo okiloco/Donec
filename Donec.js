@@ -3,7 +3,8 @@
 */
 var debug = false,
 Handlebars,
-Backbone;
+Backbone,
+_;
 /*Objeto sandbox o Delegate, Es el encargado de delegar eventos y funciones a cada uno de los módulos enlazados*/
 var Sandbox = function() {
   var listeners = {}, dispatchs={};
@@ -347,30 +348,53 @@ var Sandbox = function() {
       return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
   }
   /*Agregar Eventos Personalizados*/
-  
-  function initialize($, _, handlebars,backbone){
-    Handlebars=handlebars;
-    Backbone=backbone;
-    _.extend(this,Backbone.Events);//Agregar Eventos de underscore
-    
-      try{
-          
-          console.log(Handlebars);
-          ready=true;
-          console.info("Donec started.");
-          /*Donec.on('onReady',function(){
-            console.log("Ready!");
-            Donec.off('onReady');
-          });*/
-          Donec.trigger('onReady',$(this));
-          sandbox.dispatchEvent("onReady",$(this));//Disparar evento onReady
-        
-      }catch(e){
-        console.error("[No se encontró Librería Jquery].","Donec necesita cargar previamente JQuery para funcionar correctamente.")
+  var managerfile=(function(){
+    var instance;
+
+    function createInstance(){
+      return {
+        isDefined:function(URI){
+          return require.defined(URI);      
+        },
+        Define:function(URI){
+          require(URI);
+        }
       }
-    
-    
+    }
+    return{
+     getInstance:function(){
+        if(!instance){
+          instance=createInstance();
+          _.extend(instance,Backbone.Events);
+        }
+        return instance;
+      }
+    };
+  })();
+
+  function initialize($, underscore, handlebars,backbone){
+    try{
+        Handlebars=handlebars;
+        Backbone=backbone;
+        _=underscore;
+
+        _.extend(this,Backbone.Events);//Agregar Eventos de underscore
+        ready=true;
+        Donec.on('onReady',function(){
+          console.info("Donec started.");
+          Donec.off('onReady');
+
+          //ManagerFile
+          Donec.ManagerFile=managerfile.getInstance();
+          console.log(Donec);
+        });
+        Donec.trigger('onReady',$(this));
+        sandbox.dispatchEvent("onReady",$(this));//Disparar evento onReady
+      }catch(e){
+        console.error(e.message)
+      }
   };//end function
+  
 
   function create(moduleID,args,component) {//Creación de un módulo e inicialización.
     if(typeof(component)!='undefined'){
@@ -420,7 +444,26 @@ var Sandbox = function() {
           }
         },
         render : function(){
-          this.$el.html(this.template());
+          this.$el.html(this.template({
+            columns:[
+              {
+                text:'Columna 1',
+                dataIndex:'c1'
+              },
+              {
+                text:'Columna 2',
+                dataIndex:'c2'
+              },
+            ],
+            data:[
+              {
+                c1:'C1',c2:'C2'
+              },
+              {
+                c1:'C1',c2:'C2'
+              }
+            ]
+          }));
           $('#main').append(this.$el);
           return this;
         }
