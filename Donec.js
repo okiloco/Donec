@@ -166,7 +166,7 @@ var Sandbox = function() {
 
 
 /*Función autoejecutable Donec.*/
- Donec = function(){
+Donec = function(){
 
     /*Propieades privadas base*/
     var modules = {}, sandbox = new Sandbox(this);
@@ -288,6 +288,9 @@ var Sandbox = function() {
     instance['getParent']=function(){
         return new modules[moduleID].parent();        
     };
+    if(typeof(instance.initialize)=='undefined'){
+      instance['initialize']=function(){};
+    }
     _.extend(instance,Backbone.Events);//Agregar Eventos de underscore
     return instance;      
   }
@@ -380,23 +383,51 @@ var Sandbox = function() {
 
         _.extend(this,Backbone.Events);//Agregar Eventos de underscore
         ready=true;
+
         Donec.on('onReady',function(){
           console.info("Donec started.");
           Donec.off('onReady');
-
           //ManagerFile
           Donec.ManagerFile=managerfile.getInstance();
-          console.log(Donec);
+          console.log(getConfig());
         });
+
         Donec.trigger('onReady',$(this));
         sandbox.dispatchEvent("onReady",$(this));//Disparar evento onReady
+          // startAll();
+          console.log("requirejs.config.name");
+          console.log( Donec.require);
+          
       }catch(e){
         console.error(e.message)
       }
   };//end function
   
-
+  function RegisterHelper(HelperID,config){
+    define(HelperID,config);
+    return create(HelperID,config);
+  }
+  function getConfig(){
+    return requirejs.s.contexts._.config;
+  }
+  function parseURL(URI){
+    var url=URI.slice((~-URI.indexOf('.')>>>0)+2, URI.length);
+    url=url.replace(/\./g,'/');
+    return requirejs.toUrl(url);
+  }
+  function getBasePATH(){
+    return requirejs('');
+  }
+  function defined(URI){
+    return requirejs.required(URI);
+  }
   function create(moduleID,args,component) {//Creación de un módulo e inicialización.
+    console.log("--> parseURL(moduleID)");
+    var url=parseURL(moduleID);
+    console.log(url);
+    console.log("defined(moduleID)");
+    console.log(requirejs.defined(url));
+
     if(typeof(component)!='undefined'){
       component.components[moduleID].instance = createInstance(moduleID,args,component);//se crea la instancia    
       component.components[moduleID].instance.initialize();
@@ -427,6 +458,13 @@ var Sandbox = function() {
     };    
    }
   }
+  function startAll(){
+    for (var moduleID in modules) {
+        if (modules.hasOwnProperty(moduleID)) {
+          create(moduleID);
+        }
+    }
+  };
   function View(config){
     
     this.className=config.className;
@@ -513,6 +551,7 @@ var Sandbox = function() {
   return {
       define: define,
       create: create,
+      RegisterHelper:RegisterHelper,
       stop: function(moduleID){
         var data = modules[moduleID];
         if (data.instance) {
@@ -520,13 +559,7 @@ var Sandbox = function() {
             data.instance = null;
         }
       },
-      startAll: function(){
-        for (var moduleID in modules) {
-            if (modules.hasOwnProperty(moduleID)) {
-              this.create(moduleID);
-            }
-        }
-      },
+      startAll: startAll,
       stopAll: function() {
         for (var moduleID in modules) {
             if (modules.hasOwnProperty(moduleID)) {
@@ -836,6 +869,15 @@ Donec.onReady(function(){
       }
   });
 
+  Donec.RegisterHelper('MyDesktop.modules.my_module',function(sandbox){
+    
+    return{
+      initialize:function(){
+       console.log('')   
+      }
+    }
+
+  });
 });
 
 //console.log(md1.instance.console("Algo"));
