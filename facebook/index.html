@@ -256,6 +256,9 @@ $base_url=JURI::base();
       console.log('Successful login for: ' + response.name);
       $('#status').html(
         'Bienvenido ' + response.name + '!');
+      $("#login").css('display','none'); 
+      $("#logout").css('display','block');
+        
       removePreloading();
     });
   }
@@ -293,7 +296,9 @@ $base_url=JURI::base();
   function logOut(){
     FB.logout(function(response) {
         // Person is now logged out
-
+        $("#login").css('display','block'); 
+        $("#logout").css('display','none');
+        $('#status').html('Inciar Sesión con Facebook');
     });
   }
 </script>
