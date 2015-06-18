@@ -429,7 +429,7 @@ Donec = function(){
     return name;
   }
   function getAppName(){
-    return config.name;
+    return (typeof(config.name)!='undefined')?config.name:getName();
   }
   function getApp(){
     return window[config.name];
