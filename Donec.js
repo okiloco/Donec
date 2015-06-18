@@ -11,6 +11,7 @@ var Sandbox = function() {
   var data={};
   var count_listeners=0;
   var me =this;
+  
   function EventArgs(name,target,data){
     this.name=name;
     this.data=data;
@@ -169,8 +170,16 @@ var Sandbox = function() {
 Donec = function(){
 
     /*Propieades privadas base*/
+    var name='Donec';
     var modules = {}, sandbox = new Sandbox(this);
     var ready=false;
+    var config=getConfig();
+      
+    var app=(function(name){
+       window[name]={};
+      return window[config.name];
+    })(config['name']);
+    console.log("MyApp",MyApp);
     /*Metodos privados*/
     function createInstance(moduleID,args,component){
 
@@ -241,7 +250,7 @@ Donec = function(){
     $className=moduleID;
     
     if(modules[moduleID].instance!=null){
-
+      //Si es la primera instancia de clase
       var parent=modules[moduleID].parent; 
       var config=creator(args);
       config=new config();
@@ -253,6 +262,7 @@ Donec = function(){
       $className=moduleID+'-'+(modules[moduleID].count++);
       define($className,creator(temp));
     }else{
+      //Si tiene padre
       modules[moduleID].parent=creator(modules[moduleID].creator);
     }
 
@@ -292,7 +302,14 @@ Donec = function(){
       instance['initialize']=function(){};
     }
     _.extend(instance,Backbone.Events);//Agregar Eventos de underscore
+    Component(instance);
     return instance;      
+  }
+  function Component(config){
+    // MyApp.modules.my_module
+    
+
+    // console.log(config);
   }
   function creator(args,config){
     var instance=args;
@@ -389,14 +406,15 @@ Donec = function(){
           Donec.off('onReady');
           //ManagerFile
           Donec.ManagerFile=managerfile.getInstance();
-          console.log(getConfig());
+          //console.log(getConfig());
         });
 
         Donec.trigger('onReady',$(this));
         sandbox.dispatchEvent("onReady",$(this));//Disparar evento onReady
+        
           // startAll();
-          console.log("requirejs.config.name");
-          console.log( Donec.require);
+          //console.log("requirejs.config.name");
+          //console.log( Donec.require);
           
       }catch(e){
         console.error(e.message)
@@ -406,6 +424,15 @@ Donec = function(){
   function RegisterHelper(HelperID,config){
     define(HelperID,config);
     return create(HelperID,config);
+  }
+  function getName(){
+    return name;
+  }
+  function getAppName(){
+    return config.name;
+  }
+  function getApp(){
+    return window[config.name];
   }
   function getConfig(){
     return requirejs.s.contexts._.config;
@@ -422,11 +449,11 @@ Donec = function(){
     return requirejs.required(URI);
   }
   function create(moduleID,args,component) {//Creación de un módulo e inicialización.
-    console.log("--> parseURL(moduleID)");
+    //console.log("--> parseURL(moduleID)");
     var url=parseURL(moduleID);
-    console.log(url);
-    console.log("defined(moduleID)");
-    console.log(requirejs.defined(url));
+    //console.log(url);
+    //console.log("defined(moduleID)");
+    //console.log(requirejs.defined(url));
 
     if(typeof(component)!='undefined'){
       component.components[moduleID].instance = createInstance(moduleID,args,component);//se crea la instancia    
@@ -457,6 +484,39 @@ Donec = function(){
       instance: null
     };    
    }
+   URI(moduleID);
+  }
+  function getDOM(URI,array){
+    var c=0;
+    var node=getApp();
+    var current=node;
+    while(typeof(array[c+1])!='undefined'){
+      node=getNode(current,array[c+1]);
+      current=node;
+      c++;      
+    }
+  }
+
+  function getNode(node,childName){
+    node[childName]=function(){
+      return{
+        name:childName        
+      }
+    };
+    return node[childName];
+  }
+  
+  function URI(URI){
+    var array = URI.split('.');
+    var nameSpace=array[0];
+    try{
+      if(nameSpace!=getAppName() && nameSpace!=getName()){
+        throw new Error('El espacio de nombre no existe!');
+      }
+      getDOM(URI,array);
+    }catch(e){
+      console.warn('Error: '+URI,e.message);
+    }
   }
   function startAll(){
     for (var moduleID in modules) {
@@ -514,7 +574,7 @@ Donec = function(){
         }
         for(var s in config){
           if(this.hasOwnProperty(s)){
-            console.log(s,"is property.");
+            //console.log(s,"is property.");
           }
           instance[s]=config[s];
         }
@@ -728,7 +788,7 @@ var mod_slide=new Module("mod_slide", function(sandbox){
       }
     },
     destroy: function(){
-      console.log("Algo")
+      //console.log("Algo")
     },
     console:function (msg) {
       // console
@@ -869,7 +929,7 @@ Donec.onReady(function(){
       }
   });
 
-  Donec.RegisterHelper('MyDesktop.modules.my_module',function(sandbox){
+  Donec.RegisterHelper('MyApp.modules.my_module',function(sandbox){
     
     return{
       initialize:function(){
