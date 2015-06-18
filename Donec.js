@@ -484,28 +484,22 @@ Donec = function(){
       instance: null
     };    
    }
-   URI(moduleID);
+   console.log(URI(moduleID));
   }
   function getDOM(URI,array){
-    var c=0;
-    var node=getApp();
-    var current=node;
+    var c=0,
+    node=getApp();
     while(typeof(array[c+1])!='undefined'){
-      current=getNode(current,array[c+1]);
+      node=getNode(node,array[c+1]);
       c++;      
     }
-  }
+    return eval(URI);
+  };
 
   function getNode(node,childName){
-    if(typeof(node[childName])=='undefined'){
-      node[childName]=function(){
-        return{
-          name:childName        
-        }
-      };
-    }
+    if(typeof(node[childName])=='undefined') node[childName]={ name:childName};
     return node[childName];
-  }
+  };
   
   function URI(URI){
     var array = URI.split('.');
@@ -514,7 +508,7 @@ Donec = function(){
       if(nameSpace!=getAppName() && nameSpace!=getName()){
         throw new Error('El espacio de nombre no existe!');
       }
-      getDOM(URI,array);
+      return getDOM(URI,array);
     }catch(e){
       console.warn('Error: '+URI,e.message);
     }
