@@ -491,18 +491,19 @@ Donec = function(){
     var node=getApp();
     var current=node;
     while(typeof(array[c+1])!='undefined'){
-      node=getNode(current,array[c+1]);
-      current=node;
+      current=getNode(current,array[c+1]);
       c++;      
     }
   }
 
   function getNode(node,childName){
-    node[childName]=function(){
-      return{
-        name:childName        
-      }
-    };
+    if(typeof(node[childName])=='undefined'){
+      node[childName]=function(){
+        return{
+          name:childName        
+        }
+      };
+    }
     return node[childName];
   }
   
@@ -930,6 +931,15 @@ Donec.onReady(function(){
   });
 
   Donec.RegisterHelper('MyApp.modules.my_module',function(sandbox){
+    
+    return{
+      initialize:function(){
+       console.log('')   
+      }
+    }
+
+  });
+  Donec.RegisterHelper('MyApp.modules.my_module2',function(sandbox){
     
     return{
       initialize:function(){
