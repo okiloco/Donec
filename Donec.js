@@ -177,14 +177,17 @@ Donec = function(){
       
     var app=(function(name){
        window[name]={};
-      return window[config.name];
+      return window[name];
     })(config['name']);
-    console.log("MyApp",MyApp);
+   
     /*Metodos privados*/
     function createInstance(moduleID,args,component){
 
-      var instance =new ComponentFactory(moduleID,args,component),name, method;
-      moduleID=instance.getId();
+      var name, method;
+      var instance={};
+      
+      instance=new ComponentFactory(moduleID,args,component);        
+        moduleID=instance.getId();
       if (!debug) {
         
         if(typeof(instance['listeners']) != 'undefined'){
@@ -244,66 +247,86 @@ Donec = function(){
     }
   };//end function
   function ComponentFactory(moduleID,args,component){
-    var instance={},
+    var instance={
+      $className:moduleID,
+      getId:function(){
+        return moduleID;
+      }
+    },
     control=new Sandbox();
     var count='',
     $className=moduleID;
-    
-    if(modules[moduleID].instance!=null){
-      //Si es la primera instancia de clase
-      var parent=modules[moduleID].parent; 
-      var config=creator(args);
-      config=new config();
-      var temp=new parent();
+    if(!validURI(moduleID)){
+            
+        if(modules[moduleID].instance!=null){
+          //Si es la primera instancia de clase
+          var parent=modules[moduleID].parent; 
+          var config=creator(args);
+          config=new config();
+          var temp=new parent();
 
-      for(var s in config){
-        temp[s]=config[s];
-      }
-      $className=moduleID+'-'+(modules[moduleID].count++);
-      define($className,creator(temp));
-    }else{
-      //Si tiene padre
-      modules[moduleID].parent=creator(modules[moduleID].creator);
-    }
+          for(var s in config){
+            temp[s]=config[s];
+          }
+          $className=moduleID+'-'+(modules[moduleID].count++);
+          define($className,creator(temp));
+        }else{
+          //Si tiene padre
+          modules[moduleID].parent=creator(modules[moduleID].creator);
+        }
 
-    if(typeof args != 'undefined'){
+        if(typeof args != 'undefined'){
+          
+          var parent=modules[moduleID].parent; 
+         
+          var config=creator(args);
+          config=new config(control);
+          var temp=new parent(control);
+
+          for(var s in config){
+            temp[s]=config[s];
+          }
+          /*var tp=creator(new parent(control),new creator(args));
+          console.log("tp");
+          console.log(new tp(control));*/
+
+          modules[$className].creator=function(sandbox){
+            temp['sandbox']=control;
+            return temp;
+          }
+        }
       
-      var parent=modules[moduleID].parent; 
-     
-      var config=creator(args);
-      config=new config(control);
-      var temp=new parent(control);
+      
+        instance=modules[$className].creator(control);
+       
+        
+        instance['getParent']=function(){
+            return new modules[moduleID].parent();        
+        };
 
-      for(var s in config){
-        temp[s]=config[s];
+    }else{
+       
+      if(typeof(args.creator)!='undefined'){
+       instance=args.creator(control);
+        console.log('--> instance: ',instance);
+        
       }
-      /*var tp=creator(new parent(control),new creator(args));
-      console.log("tp");
-      console.log(new tp(control));*/
-
-      modules[$className].creator=function(sandbox){
-        temp['sandbox']=control;
-        return temp;
+      // instance=modules[$className].creator(control);
+    }
+      _.extend(instance,Backbone.Events);//Agregar Eventos de underscore
+      // Component(instance);
+      instance['getId']=function(){
+        return  $className;
+      };
+      instance['addEventListener']=control.addEventListener;
+      instance['dispatchEvent']=control.dispatchEvent;
+      instance['removeListener']=control.removeListener;
+      instance['$className']=moduleID;
+      if(typeof(instance.initialize)=='undefined'){
+        instance['initialize']=function(){};
       }
-    }
-    
-    instance=modules[$className].creator(control);
-    instance['addEventListener']=control.addEventListener;
-    instance['dispatchEvent']=control.dispatchEvent;
-    instance['removeListener']=control.removeListener;
-    instance['$className']=moduleID;
-    instance['getId']=function(){
-      return  $className;
-    };
-    instance['getParent']=function(){
-        return new modules[moduleID].parent();        
-    };
-    if(typeof(instance.initialize)=='undefined'){
-      instance['initialize']=function(){};
-    }
-    _.extend(instance,Backbone.Events);//Agregar Eventos de underscore
-    Component(instance);
-    return instance;      
+      instance['sandbox']=control;
+      return instance;      
   }
   function Component(config){
     // MyApp.modules.my_module
@@ -423,8 +446,8 @@ Donec = function(){
   
   function RegisterHelper(HelperID,config){
     define(HelperID,config);
-    return create(HelperID,config);
-  }
+    // return create(HelperID,config);
+  } 
   function getName(){
     return name;
   }
@@ -450,42 +473,114 @@ Donec = function(){
   }
   function create(moduleID,args,component) {//Creación de un módulo e inicialización.
     //console.log("--> parseURL(moduleID)");
-    var url=parseURL(moduleID);
-    //console.log(url);
-    //console.log("defined(moduleID)");
-    //console.log(requirejs.defined(url));
+   
+      
+      var url=parseURL(moduleID);
+      //console.log(url);
+      //console.log("defined(moduleID)");
+      //console.log(requirejs.defined(url));
+      if(!validURI(moduleID)){
 
-    if(typeof(component)!='undefined'){
-      component.components[moduleID].instance = createInstance(moduleID,args,component);//se crea la instancia    
-      component.components[moduleID].instance.initialize();
-    }else{
-      modules[moduleID].instance = createInstance(moduleID,args);//se crea la instancia    
-      modules[moduleID].instance.initialize();//Se llama el metodo initialize:Que es el constructor del módulo, y se llama para iniciar el módulo
-    }
+        try{
+
+          if(typeof(component)!='undefined'){
+            component.components[moduleID].instance = createInstance(moduleID,args,component);//se crea la instancia    
+            component.components[moduleID].instance.initialize();
+            return component.components[moduleID].instance;
+          }else{
+            modules[moduleID].instance = createInstance(moduleID,args);//se crea la instancia    
+            modules[moduleID].instance.initialize();//Se llama el metodo initialize:Que es el constructor del módulo, y se llama para iniciar el módulo
+            return modules[moduleID].instance;
+          }
+        }catch(e){
+          console.warn("->Error ",e.message);
+        }
+
+      }else{
+        // console.log('arguments',args);
+        // define(moduleID,args);
+        var instance=createInstance(moduleID,args);
+        instance.initialize();
+        return instance;
+      }
+    
   };//end function
   function define(moduleID, args,component) {//Agrega un nuevo módulo al arreglo de modulos
     /*moduleID: Es el nombre que recibe el módulo, y creator, es una funcion, que le da la funcionalidad del módulo.*/
-   if(typeof(component)!='undefined'){
-    component.components[moduleID] = {/*Creo un nuevo miembro en el objeto, de módulos, con los valores por defecto:
-    creator: Es la funcion, que define al módulo,
-    instnce: Es la instancia del módulo, que por defecto es null, ya que aún no ha sido creado, solo agregado al registro.
-      */
-      count:1,
-      creator: creator(args),
-      instance: null
-    };
-   }else{
-    modules[moduleID] = {/*Creo un nuevo miembro en el objeto, de módulos, con los valores por defecto:
-    creator: Es la funcion, que define al módulo,
-    instnce: Es la instancia del módulo, que por defecto es null, ya que aún no ha sido creado, solo agregado al registro.
-      */
-      count:1,
-      creator: creator(args),
-      instance: null
-    };    
-   }
-   console.log(URI(moduleID));
+   if(!validURI(moduleID)){
+      
+      if(typeof(component)!='undefined'){
+         component.components[moduleID] = {/*Creo un nuevo miembro en el objeto, de módulos, con los valores por defecto:
+           creator: Es la funcion, que define al módulo,
+           instnce: Es la instancia del módulo, que por defecto es null, ya que aún no ha sido creado, solo agregado al registro.
+             */
+           count:1,
+           creator: creator(args),
+           instance: null
+         };
+        }else{
+          modules[moduleID] = {/*Creo un nuevo miembro en el objeto, de módulos, con los valores por defecto:
+           creator: Es la funcion, que define al módulo,
+           instnce: Es la instancia del módulo, que por defecto es null, ya que aún no ha sido creado, solo agregado al registro.
+             */
+             count:1,
+             creator: creator(args),
+             instance: null
+          };    
+      }
+    }else{
+       // console.log(moduleID,getURI(moduleID));
+      getElement({
+        URI:moduleID,
+        count:1,
+        creator: creator(args),
+        instance: null
+      });
+
+    }
   }
+  function getELByURI(URI){
+    var array = splitURI(URI),
+    nameSpace=array[0];
+
+    if(validURI(URI)){
+      return getDOM(URI,array);
+    }
+  }
+  function getElement(config){
+    var URI=config.URI,
+    array = splitURI(URI),
+    nameSpace=array[0],
+    current=getApp(),
+    c=0,
+    end=false;
+
+    while(typeof(array[c+1])!='undefined'){
+
+      current=node(current,array[c+1]);
+      c++; 
+    }
+    function node(current,childName){
+   
+    if(typeof(current[childName])=='undefined'){
+
+      var instance={
+        name:childName,
+        last:(typeof(array[c+2])=='undefined')
+      };
+      current[childName]=function node(){
+        if(instance.last){
+          instance=create(URI,config);
+        }
+        return instance; 
+      }
+    };
+     return current[childName];
+    };
+
+    return eval(URI);
+  }
+  
   function getDOM(URI,array){
     var c=0,
     node=getApp();
@@ -497,21 +592,47 @@ Donec = function(){
   };
 
   function getNode(node,childName){
-    if(typeof(node[childName])=='undefined') node[childName]={ name:childName};
+    if(typeof(node[childName])=='undefined') node[childName]=function node(){
+      return {
+        name:childName,
+        config:function(args){
+          var fn=(function(name,method){
+            console.log("method",method);
+            var salida=method.apply(this,arguments);
+            var d=new Date();
+            salida.id=d.getTime();
+            return salida;
+         })(moduleID,args);
+
+        }
+      }
+      
+    };
     return node[childName];
   };
-  
-  function URI(URI){
-    var array = URI.split('.');
+  function validURI(URI){
+    var array = splitURI(URI),
+    nameSpace=array[0];
+    if(nameSpace!=getAppName() && nameSpace!=getName()){
+      return false; 
+    }else{
+      return true;
+    }
+  }
+  function getURI(URI){
+    var array = splitURI(URI);
     var nameSpace=array[0];
     try{
-      if(nameSpace!=getAppName() && nameSpace!=getName()){
+      if(!validURI(URI)){
         throw new Error('El espacio de nombre no existe!');
       }
       return getDOM(URI,array);
     }catch(e){
       console.warn('Error: '+URI,e.message);
     }
+  }
+  function splitURI(URI){
+    return URI.split('.');
   }
   function startAll(){
     for (var moduleID in modules) {
@@ -928,7 +1049,7 @@ Donec.onReady(function(){
     
     return{
       initialize:function(){
-       console.log('')   
+       console.log('Inicializar!!')   
       }
     }
 
@@ -937,7 +1058,7 @@ Donec.onReady(function(){
     
     return{
       initialize:function(){
-       console.log('')   
+       console.log('Inicializar!!')   
       }
     }
 
