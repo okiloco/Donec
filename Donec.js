@@ -446,7 +446,7 @@ Donec = function(){
   
   function RegisterHelper(HelperID,config){
     define(HelperID,config);
-    // return create(HelperID,config);
+    return create(HelperID,config);
   } 
   function getName(){
     return name;
@@ -499,8 +499,10 @@ Donec = function(){
       }else{
         // console.log('arguments',args);
         // define(moduleID,args);
+        console.log('INSTANCE: ',eval(moduleID)['instance']);
         var instance=createInstance(moduleID,args);
         instance.initialize();
+        eval(moduleID)['instance']=instance;
         return instance;
       }
     
@@ -1050,6 +1052,9 @@ Donec.onReady(function(){
     return{
       initialize:function(){
        console.log('Inicializar!!')   
+      },
+      render:function(){
+        alert("render");
       }
     }
 
@@ -1058,7 +1063,33 @@ Donec.onReady(function(){
     
     return{
       initialize:function(){
-       console.log('Inicializar!!')   
+       console.log('Inicializar!!');
+       sandbox.addEventListener('afterrender',function(){
+         alert("Afte render!");
+
+       });   
+      },
+      render:function(){
+        var models=Backbone.Collection.extend({
+          url:'index.php?option=com_salafama&view=artistas&format=raw&task=listar'
+        });
+        var records=new models();
+        records.fetch();
+        records.on('add',function(model){
+          console.log("--> ",model);
+        });
+        var view=Backbone.View.extend({
+          el:'#app',
+          initialize:function(){
+            alert("Backbone!");
+          },
+          render:function(){
+
+          }
+         });
+        var v=new view();
+       // var m=Donec.create('MyApp.modules.my_module');
+       // m.render();
       }
     }
 
